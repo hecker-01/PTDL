@@ -12,15 +12,12 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 import dev.heckr.ptdl.R
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
-import java.io.File
 
 /**
  * Handles downloading and installing APK updates.
@@ -270,20 +267,16 @@ class AppUpdater(private val fragment: Fragment) {
                 }
             }
 
-            val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
-            if (!file.exists()) {
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val apkUri = dm.getUriForDownloadedFile(downloadId)
+            if (apkUri == null) {
+                Toast.makeText(context, context.getString(R.string.installation_failed_format, "file not found"), Toast.LENGTH_LONG).show()
                 return
             }
 
             val intent = Intent(Intent.ACTION_VIEW)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                val apkUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-                intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } else {
-                intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive")
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive")
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             fragment.startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(context, context.getString(R.string.installation_failed_format, e.message), Toast.LENGTH_LONG).show()
