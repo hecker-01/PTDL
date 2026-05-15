@@ -98,6 +98,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Raise the lock overlay before the system takes the recents screenshot,
+        // so neither the preview nor the return animation reveals app content.
+        if (AppLockManager.shouldLockOnBackground(this) && AppLockManager.isSessionUnlocked) {
+            lockOverlay.isVisible = true
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         if (AppLockManager.isEnabled(this) && !AppLockManager.isSessionUnlocked) {
